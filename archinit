@@ -1,0 +1,188 @@
+#!/bin/bash
+# This script comes with no warranty …use at own risk
+# Copyright (C) 2014  Le Duc Hoang
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program or from the site that you downloaded it
+# from; if not, write to the Free Software Foundation, Inc., 59 Temple
+# Place, Suite 330, Boston, MA  02111-1307   USA
+#
+# my personal Arch Linux Installation script
+# Version Beta 1
+
+
+function stop_spinner() {
+  kill -s SIGHUP $PID &
+  { wait $PID; } &> /dev/null
+  PID=0
+  return 0
+}
+
+function start_spinner() {
+  setterm -cursor off
+  parts=( "|" "/" "-" "\\" )
+  
+  while [ 1 ];
+  do
+    for ix in 0 1 2 3;
+    do
+      echo -en ${parts[$ix]}
+      sleep .1
+      echo -en "\b"
+    done
+  done
+  return 0
+}
+
+function spinner()  {
+  if [ $1 == "start" ];
+  then
+    if [ $PID -eq 0 ];
+    then
+      start_spinner&
+      PID=$!
+    fi
+  elif [ $1 == "stop" ];
+  then
+    if [ $PID -ne 0 ];
+    then
+      stop_spinner
+    fi
+  fi
+  return 0
+}
+
+function install_yaourt() {
+  clear
+  echo "******************************************************"
+  echo "***************   Installing YAOURT!   ***************"
+  echo "******************************************************"
+  echo ""
+  
+  cd /tmp
+  echo "Retrieving package-query ..."
+  curl -O https://aur.archlinux.org/packages/pa/package-query/package-query.tar.gz
+  echo "Retrieving yaourt ..."
+  curl -O https://aur.archlinux.org/packages/ya/yaourt/yaourt.tar.gz
+  
+  echo "Uncompressing package-query ..."
+  tar zxvf package-query.tar.gz
+  cd package-query
+  echo "Installing package-query ..."
+  makepkg -si --asroot --noconfirm
+  
+  cd ..
+  
+  echo "Uncompressing yaourt ..."
+  tar zxvf yaourt.tar.gz
+  cd yaourt
+  echo "Installing yaourt ..."
+  makepkg -si --asroot --noconfirm
+  
+  cd ..
+  
+  rm -rf package-query
+  rm -rf yaourt
+  rm -rf package-query.tar.gz
+  rm -rf yaourt.tar.gz
+  
+  cd
+  return 0
+}
+
+
+function install_package() {
+  case "$1" in
+    "pacman")
+      pacman --noconfirm --needed -S ${2}
+    ;;
+    "yaourt")
+      su - ${USERNAME} -c ' yaourt --noconfirm -S '${2}
+    ;;
+    "powerpill")
+      powerpill --noconfirm --needed -S ${2}
+    ;;
+    *)
+      echo ''
+    ;;
+  esac
+  
+  return 0
+}
+
+function install_powerpill() {
+  clear
+  echo "******************************************************"
+  echo "***************  Installing POWERPILL! ***************"
+  echo "******************************************************"
+  echo ""
+  sleep 2
+  install_package "yaourt" "powerpill"
+  
+  echo -n " [updating powerpill]... "
+  spinner "start"
+  
+  reflector -p rsync -f n -l m
+  powerpill -Syu
+  
+  spinner "stop"
+  echo ""
+  echo ""
+  
+  return 0
+}
+
+function install_compress_tools() {
+  clear
+  echo "******************************************************"
+  echo "*********   Installing Compress Tools! ***************"
+  echo "******************************************************"
+  echo ""
+  sleep 2
+  install_package "powerpill" "unrar zip p7zip arj unace unzip"
+  install_package "yaourt" "file-roller2-nn"
+  return 0
+}
+
+## The Advanced Linux Sound Architecture (ALSA) is a Linux kernel component which replaced the original Open Sound System (OSSv3) for providing device drivers for sound cards.
+function install_alsa() {
+  clear
+  echo "******************************************************"
+  echo "*********       Installing Alsa!       ***************"
+  echo "******************************************************"
+  echo ""
+  ARCH=$(uname -m)
+  install_package "powerpill" "alsa-utils alsa-plugins"
+  [[ ${ARCH} == x86_64 ]] && install_package "powerpill" "lib32-alsa-plugins"
+  return 0
+}
+##PulseAudio is a sound system for POSIX OSes, meaning that it is a proxy for your sound applications. It allows you to do advanced operations on your sound data as it passes between your application and your hardware. Things like transferring the audio to a different machine, changing the sample format or channel count and mixing several sounds into one are easily achieved using a sound server.
+## See more http://www.freedesktop.org/wiki/Software/PulseAudio/
+function install_pulse() {
+  clear
+  echo "******************************************************"
+  echo "*********     Installing Pulseaudio!   ***************"
+  echo "******************************************************"
+  echo ""
+  sleep 2
+  ARCH=$(uname -m)
+  install_package "powerpill" "pulseaudio pulseaudio-alsa pavucontrol"
+  [[ ${ARCH} == x86_64 ]] && install_package "powerpill" "lib32-libpulse"
+  echo "load-module module-switch-on-connect" >> /etc/pulse/default.pa
+  return 0
+}
+
+
+
+install_powerpill
+install_compress_tools
+echo "install finish"
