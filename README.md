@@ -1,0 +1,4 @@
+archinit
+========
+
+personal arch install
