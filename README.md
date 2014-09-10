@@ -1,6 +1,39 @@
 archinit
 ========
 
+sudo pacman –Syu
+
+sudo pacman –S bash-completion
+
+sudo pacman -S xorg-server xorg-xinit xorg-utils xorg-server-utils mesa
+
+pacman -S xf86-video-intel
+
+startx
+
+pacman -S cinnamon
+
+pacman –S net-tools
+
+pacman -S network-manager-applet
+
+ip link
+
+systemctl stop dhcpcd@ens33.service
+
+systemctl disable dhcpcd@ens33.service
+
+systemctl stop dhcpcd.service
+
+systemctl disable dhcpcd.service
+
+pacman –S gdm
+
+systemctl enable gdm
+
+systemctl start gdm
+
+https://wiki.archlinux.org/index.php/Maximizing_performance
 Catalyst Install
 
 - yaourt catalyst-test (as non root user)
