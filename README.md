@@ -64,3 +64,40 @@ Catalyst Install
 - sudo aticonfig --initial
 - sudo reboot
 
+
+Reinstall GRUB2 with arch linux live cd / usb key
+
+So I had to reinstall my Windows 8 in my dual boot system with Arch
+Linux. After the reinstall I had the default boot manager of Windows
+back in place of GRUB2.
+
+My way to fix it, was to install on my USB key the current live CD of
+archlinux Download here. Burn it to CD or copy it to your USB key with
+
+
+dd bs=4M if=/path/to/archlinux.iso of=/dev/sdx
+After the installing of the live CD to my USB key. I was restarting my
+PC to boot from it. Afterwards I got the default arch Linux shell.
+
+I was creating a root point for my root disk in /mnt/root/
+
+mkdir /mnt/root/
+Now I can mount the root partition to this point
+
+mount /dev/sdXX /mnt/root
+Now I had to change the root. This command also adds the necessary
+folders like (proc, dev,…)
+
+arch-chroot /mnt/root
+I have a separate boot partition so I had to mount this also to my
+chroot system
+
+mount /boot
+Regenerate the grub.cfg
+
+grub-mkconfig -o /boot/grub/grub.cfg
+So, it’s nearly done! I had only to install Grub back in the MBR
+
+grub-install /dev/sdXX
+Last not but least. Rebooted and it was working
+
